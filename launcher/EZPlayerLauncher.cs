@@ -1,7 +1,11 @@
-// EZ Video/Music Player - smart launcher (v1.2.1)
+// EZ Video/Music Player - smart launcher (v1.2.3)
 // Sits in front of EZPlayerCore.exe as EZPlayer.exe.
-//  - Videos: one at a time (a new video replaces the one playing, in the same window)
+//  - Videos, "one at a time" ON:  a new video replaces the one playing, in the same window
+//  - Videos, "one at a time" OFF: every video opens in its own window, even while
+//    others are playing (EZPlayerCore.exe --new-instance), so 2, 3, 4, 5... play at once
 //  - Songs: added to the playlist of the player that is already open
+//  - The player's own setting is respected: if you change it inside the player,
+//    the launcher remembers your choice instead of switching it back
 // Options: EZPlayer.exe --options
 using System;
 using System.Collections.Generic;
@@ -19,12 +23,12 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("EZ Video/Music Player")]
 [assembly: AssemblyProduct("EZ Video/Music Player")]
 [assembly: AssemblyDescription("Play Everything. See the Music. Control the Sound.")]
-[assembly: AssemblyVersion("1.2.1.0")]
-[assembly: AssemblyFileVersion("1.2.1.0")]
+[assembly: AssemblyVersion("1.2.3.0")]
+[assembly: AssemblyFileVersion("1.2.3.0")]
 
 static class Program
 {
-    const string Version = "1.2.1";
+    const string Version = "1.2.3";
     const string OptKey = @"Software\EZVideoMusicPlayer\Launcher";
 
     static readonly HashSet<string> AudioExt = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
@@ -82,7 +86,20 @@ static class Program
                 if (other.Count > 0)
                 {
                     if (!CoreRunning()) EnsureVideoMode();
-                    Run(other.ToArray(), false);
+                    if (GetOpt("VideosOneAtATime", true))
+                    {
+                        Run(other.ToArray(), false);
+                    }
+                    else
+                    {
+                        // several at once: each video gets its own player window,
+                        // even while other players are already open and playing
+                        for (int i = 0; i < other.Count; i++)
+                        {
+                            Run(new[] { "--new-instance", other[i] }, false);
+                            if (i < other.Count - 1) Thread.Sleep(400);
+                        }
+                    }
                     if (audio.Count > 0) WaitForPlayer();
                 }
                 foreach (var song in audio)
@@ -161,7 +178,9 @@ static class Program
     static void EnsureVideoMode()
     {
         if (CoreRunning()) return;  // never touch settings while the player is open
+        AdoptPlayerSetting();
         bool want = GetOpt("VideosOneAtATime", true);
+        SetOptInt("LastWrittenSingle", want ? 1 : 0);
         foreach (var f in SettingsFiles())
         {
             try
@@ -175,6 +194,26 @@ static class Program
                 string n = rx.Replace(s, "${1}" + target, 1);
                 File.Copy(f, f + ".before-launcher", true);
                 File.WriteAllText(f, n, new UTF8Encoding(false));
+            }
+            catch { }
+        }
+    }
+
+    // If the player's own "one window" setting no longer matches what the launcher
+    // last wrote, the user changed it inside the player: keep their choice.
+    static void AdoptPlayerSetting()
+    {
+        int last = GetOptInt("LastWrittenSingle", -1);
+        if (last < 0) return;               // first run: nothing to compare with yet
+        var rx = new Regex("\"singleInstance\"\\s*:\\s*(true|false)");
+        foreach (var f in SettingsFiles())
+        {
+            try
+            {
+                var m = rx.Match(File.ReadAllText(f));
+                if (!m.Success) continue;
+                int now = m.Groups[1].Value == "true" ? 1 : 0;
+                if (now != last) { SetOpt("VideosOneAtATime", now == 1); return; }
             }
             catch { }
         }
@@ -272,6 +311,30 @@ static class Program
         catch { return def; }
     }
 
+    static int GetOptInt(string name, int def)
+    {
+        try
+        {
+            using (var k = Registry.CurrentUser.OpenSubKey(OptKey))
+            {
+                if (k == null) return def;
+                var v = k.GetValue(name);
+                return v == null ? def : Convert.ToInt32(v);
+            }
+        }
+        catch { return def; }
+    }
+
+    static void SetOptInt(string name, int val)
+    {
+        try
+        {
+            using (var k = Registry.CurrentUser.CreateSubKey(OptKey))
+                k.SetValue(name, val, RegistryValueKind.DWord);
+        }
+        catch { }
+    }
+
     public static void SetOpt(string name, bool val)
     {
         using (var k = Registry.CurrentUser.CreateSubKey(OptKey))
@@ -299,12 +362,12 @@ static class Program
             var sub = new Label { Text = "When you double-click a file while EZ Player is already open:",
                 AutoSize = true, Location = new Point(26, 58), ForeColor = Color.FromArgb(200, 200, 220) };
 
-            videos = new CheckBox { Text = "VIDEOS: one at a time\n(a new video replaces the one that's playing, in the same window)",
+            videos = new CheckBox { Text = "VIDEOS: one at a time\n(uncheck to play several videos at once, each in its own window)",
                 AutoSize = false, Size = new Size(500, 56), Location = new Point(30, 92), Checked = GetOpt("VideosOneAtATime", true) };
             songs = new CheckBox { Text = "SONGS: add to the playlist\n(the new song lines up after the others - nothing stops)",
                 AutoSize = false, Size = new Size(500, 56), Location = new Point(30, 154), Checked = GetOpt("SongsToPlaylist", true) };
 
-            var note = new Label { Text = "Video changes take effect the next time you open the player.",
+            var note = new Label { Text = "Changes take effect right away for the next file you open.",
                 AutoSize = true, Location = new Point(30, 220), ForeColor = Color.FromArgb(170, 170, 190), Font = new Font("Segoe UI", 9f) };
 
             var save = new Button { Text = "Save", Size = new Size(120, 40), Location = new Point(290, 262),
@@ -315,6 +378,7 @@ static class Program
             cancel.FlatAppearance.BorderSize = 0;
             save.Click += (s, e) => {
                 SetOpt("VideosOneAtATime", videos.Checked);
+                SetOptInt("LastWrittenSingle", -1);   // the choice made here wins
                 SetOpt("SongsToPlaylist", songs.Checked);
                 EnsureVideoMode();
                 MessageBox.Show("Saved.", "EZ Player", MessageBoxButtons.OK, MessageBoxIcon.Information);

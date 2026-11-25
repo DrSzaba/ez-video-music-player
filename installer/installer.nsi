@@ -1,6 +1,6 @@
 Unicode true
 !define APPNAME "EZ Video/Music Player"
-!define VERSION "1.2.1"
+!define VERSION "1.2.3"
 !define UNINSTKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\EZVideoMusicPlayer"
 
 Name "${APPNAME} ${VERSION}"
@@ -11,7 +11,7 @@ SetCompressor /SOLID lzma
 Icon "app.ico"
 UninstallIcon "app.ico"
 BrandingText "${APPNAME} ${VERSION}"
-VIProductVersion "1.2.1.0"
+VIProductVersion "1.2.3.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "FileDescription" "${APPNAME} Setup"
 VIAddVersionKey "FileVersion" "${VERSION}"
@@ -22,7 +22,7 @@ VIAddVersionKey "LegalCopyright" "GNU GPL v3"
 !include "FileFunc.nsh"
 !define MUI_ICON "app.ico"
 !define MUI_UNICON "app.ico"
-!define MUI_WELCOMEPAGE_TEXT "This installs ${APPNAME} ${VERSION}.$\r$\n$\r$\nNEW: videos play one at a time, and songs you open are added to the playlist.$\r$\n$\r$\nIf you already have EZ Player, it is updated and your settings and playlists are kept.$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TEXT "This installs ${APPNAME} ${VERSION}.$\r$\n$\r$\nNEW: play several videos at once - each in its own window. Turn it on in Start menu, EZ Player - How files open (uncheck VIDEOS: one at a time), or inside the player.$\r$\n$\r$\nIf you already have EZ Player, it is updated and your settings and playlists are kept.$\r$\n$\r$\nClick Next to continue."
 !define MUI_FINISHPAGE_RUN "$INSTDIR\EZPlayerStart.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start EZ Video/Music Player"
 !insertmacro MUI_PAGE_WELCOME
@@ -111,7 +111,7 @@ Section "-finish"
 SectionEnd
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "The player, with videos one at a time and songs to the playlist."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} "The player. Videos one at a time or several at once, and songs to the playlist."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Put an EZ Player icon on your desktop."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecAssoc} "Adds EZ Player to the right-click Open with menu. Does not change your default player."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END

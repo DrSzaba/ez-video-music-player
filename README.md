@@ -6,6 +6,11 @@ A free Windows media player with a 50 x 50 spectrum analyzer, 20 visualizations,
 
 **⬇ [Download for Windows](https://github.com/DrSzaba/ez-video-music-player/releases/latest/download/EZ-Video-Music-Player-Setup.zip)** · 💚 Donate on Cash App: **$Szaba**
 
+## What's new in 1.2.3
+- **Play several videos at once.** Uncheck **VIDEOS: one at a time** (Start menu → **EZ Player - How files open**)
+  and every video you open gets its own window, even while others are already playing.
+- **Your choice sticks.** If you change the setting inside the player, opening the player again no longer switches it back.
+
 ## What's new in 1.2.1
 - **Videos play one at a time.** A new video replaces the one that's playing, in the same window.
 - **Songs go to the playlist.** Opening a song while the player is open adds it after the others.
@@ -18,7 +23,7 @@ The player updates itself. It checks
 
 ## What's in this repository
 - `index.html` – the download page
-- `launcher/EZPlayerLauncher.cs` – the 1.2.1 launcher that decides how files open
+- `launcher/EZPlayerLauncher.cs` – the 1.2.3 launcher that decides how files open
   (build: `mcs -target:winexe -sdk:4.5 -out:EZPlayer.exe -win32icon:installer/app.ico -r:System.Windows.Forms.dll -r:System.Drawing.dll launcher/EZPlayerLauncher.cs`)
 - `installer/installer.nsi` – the NSIS installer script
 
