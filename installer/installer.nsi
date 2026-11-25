@@ -59,7 +59,14 @@ Section "!EZ Video/Music Player (required)" SecMain
 
   SetOutPath "$INSTDIR"
   SetOverwrite ifdiff
-  File /r "stage\*.*"
+  File /r /x "EZPlayerIcons.dll" /x "EZThumbs.dll" /x "EZThumbCore.dll" "stage\*.*"
+  ; File Explorer keeps these open (file icons and thumbnails). Replace them
+  ; if possible; if Explorer has them locked, keep the copy that is there
+  ; instead of stopping with "Error opening file for writing".
+  SetOverwrite try
+  File "stage\EZPlayerIcons.dll"
+  File "stage\EZThumbs.dll"
+  File "stage\EZThumbCore.dll"
   SetOverwrite on
   File "stage\EZPlayer.exe"
   File "stage\EZPlayerCore.exe"
